@@ -17,7 +17,7 @@ import (
 )
 
 func NewHandler(
-	server *mqtt.Server, errorLogger *logrus.Logger, accessLogger *logrus.Logger,
+	server *mqtt.Server, extra string, errorLogger *logrus.Logger, accessLogger *logrus.Logger,
 ) (*fiber.App, error) {
 
 	app := fiber.New(fiber.Config{
@@ -47,6 +47,13 @@ func NewHandler(
 
 	app.Use(pprof.New(pprof.Config{Prefix: "/endpoint-prefix"}))
 	app.Use(requestid.New())
+
+	app.Use("/public/extra", static.New(extra, static.Config{
+		Browse:    true,
+		Download:  true,
+		ByteRange: true,
+		Compress:  true,
+	}))
 
 	//app.Get("/healthz", healthcheck.New())
 

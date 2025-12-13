@@ -1,7 +1,7 @@
-debug: true
-log-path: ./
-data-path: ./
-extra-path: ./
+debug: false
+log-path: /var/log/gridbeat
+data-path: /var/lib/gridbeat/data
+extra-path: /var/lib/gridbeat/extra
 
 mqtt:
     port: 1883

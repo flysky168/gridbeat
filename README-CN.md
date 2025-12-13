@@ -41,9 +41,33 @@ $ ./gridbeat server
 ### 源代码编译
 
 ```bash
-# 开始前确保安装 go（1.25 版本以上）、npm（25.X 版本以上） 工具
-# 安装构建工具
+# 安装 go（1.25 版本以上）、npm（25.X 版本以上） 工具
 
+wget https://mirrors.aliyun.com/golang/go1.25.5.linux-arm64.tar.gz
+
+tar xvzf go1.25.5.linux-arm64.tar.gz -C /usr/local
+
+cat > /etc/profile.d/go.sh << 'EOF'
+# Go environment (system-wide)
+export GOROOT=/usr/local/go
+export GOPATH=\$HOME/go
+export PATH="\$PATH:\$GOROOT/bin:\$GOPATH/bin"
+export GOPROXY=https://goproxy.cn,direct
+EOF
+
+chmod +x /etc/profile.d/go.sh
+source /etc/profile.d/go.sh
+
+# 安装 node
+wget https://mirrors.cloud.tencent.com/nodejs-release/v25.2.1/node-v25.2.1-linux-arm64.tar.gz
+tar xvzf node-v25.2.1-linux-arm64.tar.gz -C /usr/local/ --strip-components=1
+
+# 安装构建工具 go-task
+
+### Linux
+go install github.com/go-task/task/v3/cmd/task@latest
+
+### Mac
 brew install go-task/tap/go-task
 brew install go-task
 
@@ -53,6 +77,9 @@ $ git clone https://github.com/fluxionwatt/gridbeat
 # 启动构建
 $ cd gridbeat && task build
 ```
+
+# rpm build
+$ goreleaser release --clean --snapshot --skip=publish --skip=announce
 
 ### Docker
 

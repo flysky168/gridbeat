@@ -10,6 +10,7 @@ type Config struct {
 	LogPath     string `mapstructure:"log-path"`
 	DataPath    string `mapstructure:"data-path"`
 	ExtraPath   string `mapstructure:"extra-path"`
+	PID         string `mapstructure:"pid"`
 	HTTP        struct {
 		Port          uint16 `mapstructure:"port"`
 		RedirectHTTPS bool   `mapstructure:"redirect_https"`

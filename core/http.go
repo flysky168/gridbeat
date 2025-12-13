@@ -2,6 +2,7 @@ package core
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net"
 
 	"github.com/fluxionwatt/gridbeat/http"
@@ -13,7 +14,7 @@ import (
 
 func ServerHTTP(server *mqtt.Server, errorLogger *logrus.Logger, accessLogger *logrus.Logger) {
 
-	app, err := http.NewHandler(server, errorLogger, accessLogger)
+	app, err := http.NewHandler(server, Gconfig.ExtraPath, errorLogger, accessLogger)
 	if err != nil {
 		errorLogger.Fatal(err)
 	}
@@ -45,11 +46,12 @@ func ServerHTTP(server *mqtt.Server, errorLogger *logrus.Logger, accessLogger *l
 		}()
 	}
 
-	// 3. 创建 HTTP listener（明文）
 	lnHTTP, err := net.Listen("tcp", ":"+viper.GetString("http.port"))
 	if err != nil {
 		errorLogger.Fatal("http listen failed: ", err)
 	}
+
+	fmt.Println("use http at", Gconfig.HTTP.Port)
 
 	if err := app.Listener(lnHTTP, fiber.ListenConfig{
 		DisableStartupMessage: true,

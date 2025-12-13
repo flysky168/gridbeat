@@ -1,0 +1,20 @@
+[Unit]
+Description=FluxionWatt data acquisition and monitoring Agent
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+PIDFile=/run/gridbeat.pid
+Environment="conffile=/etc/gridbeat/gridbeat.yaml"
+EnvironmentFile=-/etc/sysconfig/gridbeat
+ExecStart=/usr/sbin/gridbeat server -c ${conffile}
+ExecStop=/bin/sh -c "/bin/kill -s TERM $(/bin/cat /run/gridbeat.pid)"
+Restart=always
+RestartSec=30s
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -14,108 +14,176 @@ import (
 	"github.com/fluxionwatt/gridbeat/core"
 	"github.com/fluxionwatt/gridbeat/model"
 	mqtt "github.com/mochi-mqtt/server/v2"
-	"github.com/sevlyar/go-daemon"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-var (
-	accesslogPath = "access.log"
-	runlogPath    = "run.log"
-	mqttlogPath   = "mqtt.log"
-	sqllogPath    = "sql.log"
+type ReopenLogger struct {
+	mu sync.Mutex
+
+	accesslogPath string
+	runlogPath    string
+	mqttlogPath   string
+	sqllogPath    string
 
 	accesslogPathFile *os.File
 	runlogPathFile    *os.File
 	mqttlogPathFile   *os.File
 	sqllogPathFile    *os.File
 
-	accessLogger = logrus.New()
-	runLogger    = logrus.New()
-	mqttLogger   = logrus.New()
-	sqlLogger    = logrus.New()
-	logMu        sync.Mutex
-)
+	accessLogger *logrus.Logger
+	runLogger    *logrus.Logger
+	mqttLogger   *logrus.Logger
+	sqlLogger    *logrus.Logger
+}
 
-func initLoggers() error {
-	logMu.Lock()
-	defer logMu.Unlock()
+func NewReopenLogger(path string, debug bool) (*ReopenLogger, error) {
+	var err error
 
-	// 关闭旧的
-	if accesslogPathFile != nil {
-		_ = accesslogPathFile.Close()
+	if err = os.MkdirAll(path, 0o755); err != nil {
+		return nil, fmt.Errorf("failed to create dir %s: %w", path, err)
 	}
-	if runlogPathFile != nil {
-		_ = runlogPathFile.Close()
+
+	l := &ReopenLogger{
+		accesslogPath: path + "/access.log",
+		runlogPath:    path + "/run.log",
+		mqttlogPath:   path + "/mqtt.log",
+		sqllogPath:    path + "/sql.log",
+		accessLogger:  logrus.New(),
+		runLogger:     logrus.New(),
+		mqttLogger:    logrus.New(),
+		sqlLogger:     logrus.New(),
 	}
-	if mqttlogPathFile != nil {
-		_ = mqttlogPathFile.Close()
+
+	if l.accesslogPathFile, err = os.OpenFile(l.accesslogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
+		return nil, err
 	}
-	if sqllogPathFile != nil {
-		_ = sqllogPathFile.Close()
+	if l.runlogPathFile, err = os.OpenFile(l.runlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
+		return nil, err
+	}
+	if l.mqttlogPathFile, err = os.OpenFile(l.mqttlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
+		return nil, err
+	}
+	if l.sqllogPathFile, err = os.OpenFile(l.sqllogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
+		return nil, err
+	}
+
+	l.accessLogger.SetOutput(l.accesslogPathFile)
+	l.accessLogger.SetFormatter(&AccessLogJSONFormatter{})
+
+	l.runLogger.SetOutput(l.runlogPathFile)
+	l.runLogger.SetFormatter(&logrus.JSONFormatter{})
+	if debug {
+		l.runLogger.SetLevel(logrus.DebugLevel)
+		l.runLogger.ReportCaller = true
+	}
+
+	l.mqttLogger.SetOutput(l.mqttlogPathFile)
+	l.mqttLogger.SetFormatter(&logrus.JSONFormatter{})
+	if debug {
+		l.mqttLogger.SetLevel(logrus.DebugLevel)
+		l.mqttLogger.ReportCaller = true
+	}
+
+	l.sqlLogger.SetOutput(l.sqllogPathFile)
+	l.sqlLogger.SetFormatter(&logrus.JSONFormatter{})
+	if debug {
+		l.sqlLogger.SetLevel(logrus.DebugLevel)
+		l.sqlLogger.ReportCaller = true
+	}
+
+	return l, nil
+}
+
+func (l *ReopenLogger) Reopen() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.accesslogPathFile != nil {
+		_ = l.accesslogPathFile.Close()
+	}
+
+	if l.runlogPathFile != nil {
+		_ = l.runlogPathFile.Close()
+	}
+
+	if l.mqttlogPathFile != nil {
+		_ = l.mqttlogPathFile.Close()
+	}
+
+	if l.sqllogPathFile != nil {
+		_ = l.sqllogPathFile.Close()
 	}
 
 	var err error
-
-	if accesslogPathFile, err = os.OpenFile(core.Gconfig.LogPath+"/"+accesslogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
+	if l.accesslogPathFile, err = os.OpenFile(l.accesslogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
 		return err
 	}
-	if runlogPathFile, err = os.OpenFile(core.Gconfig.LogPath+"/"+runlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
+	if l.runlogPathFile, err = os.OpenFile(l.runlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
 		return err
 	}
-	if mqttlogPathFile, err = os.OpenFile(core.Gconfig.LogPath+"/"+mqttlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
+	if l.mqttlogPathFile, err = os.OpenFile(l.mqttlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
 		return err
 	}
-	if sqllogPathFile, err = os.OpenFile(core.Gconfig.LogPath+"/"+sqllogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
+	if l.sqllogPathFile, err = os.OpenFile(l.sqllogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
 		return err
 	}
 
-	accessLogger.SetOutput(accesslogPathFile)
-	accessLogger.SetFormatter(&AccessLogJSONFormatter{})
-
-	runLogger.SetOutput(runlogPathFile)
-	runLogger.SetFormatter(&logrus.JSONFormatter{})
-	if core.Gconfig.Debug {
-		runLogger.SetLevel(logrus.DebugLevel)
-		runLogger.ReportCaller = true
-	}
-
-	mqttLogger.SetOutput(mqttlogPathFile)
-	mqttLogger.SetFormatter(&logrus.JSONFormatter{})
-	if core.Gconfig.Debug {
-		mqttLogger.SetLevel(logrus.DebugLevel)
-		mqttLogger.ReportCaller = true
-	}
-
-	sqlLogger.SetOutput(sqllogPathFile)
-	sqlLogger.SetFormatter(&logrus.JSONFormatter{})
-	if core.Gconfig.Debug {
-		sqlLogger.SetLevel(logrus.DebugLevel)
-		sqlLogger.ReportCaller = true
-	}
+	l.accessLogger.SetOutput(l.accesslogPathFile)
+	l.runLogger.SetOutput(l.runlogPathFile)
+	l.mqttLogger.SetOutput(l.mqttlogPathFile)
+	l.sqlLogger.SetOutput(l.sqllogPathFile)
 
 	return nil
 }
 
+func (l *ReopenLogger) Close() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.accesslogPathFile != nil {
+		_ = l.accesslogPathFile.Close()
+	}
+
+	if l.runlogPathFile != nil {
+		_ = l.runlogPathFile.Close()
+	}
+
+	if l.mqttlogPathFile != nil {
+		_ = l.mqttlogPathFile.Close()
+	}
+
+	if l.sqllogPathFile != nil {
+		_ = l.sqllogPathFile.Close()
+	}
+}
+
+func createPidFile(path string) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString(strconv.Itoa(os.Getpid()))
+	f.Close()
+	return err
+}
+
+func removePidFile(path string) {
+	_ = os.Remove(path)
+}
+
 func init() {
 	rootCmd.AddCommand(serverCmd)
-	rootCmd.AddCommand(serverStopCmd)
 
 	flags := serverCmd.Flags()
-	flags.BoolVarP(&core.Gconfig.Daemon, "daemon", "d", false, "run as daemon process")
 	flags.BoolVar(&core.Gconfig.DisableAuth, "disable_auth", false, "disable http api auth")
-
-	viper.BindPFlag("daemon", serverCmd.Flags().Lookup("daemon"))
 }
 
 type AccessLogJSONFormatter struct{}
 
 func (f *AccessLogJSONFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	// 只用自定义字段，不要内置字段
 	data := make(map[string]interface{}, len(entry.Data))
 
-	// 拷贝自己的字段（WithField/WithFields 设置的）
 	for k, v := range entry.Data {
 		data[k] = v
 	}
@@ -129,35 +197,23 @@ func (f *AccessLogJSONFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return append(b, '\n'), nil
 }
 
-var serverStopCmd = &cobra.Command{
-	Use:   "stop",
-	Short: "stop running server",
-	Long:  ``,
-	RunE: func(cmd *cobra.Command, args []string) error {
+func handleSignals(logger *ReopenLogger) {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGUSR1, syscall.SIGTERM, syscall.SIGINT)
 
-		cwd, _ := os.Getwd()
-
-		pidFile := filepath.Join(cwd, "gridbeat.pid")
-
-		cntxt := &daemon.Context{
-			PidFileName: pidFile,
-			PidFilePerm: 0644,
+	for sig := range ch {
+		switch sig {
+		case syscall.SIGUSR1:
+			log.Println("received SIGUSR1, reopening log file")
+			if err := logger.Reopen(); err != nil {
+				log.Printf("reopen log failed: %v\n", err)
+			}
+		case syscall.SIGTERM, syscall.SIGINT:
+			log.Println("exiting")
+			logger.Close()
+			os.Exit(0)
 		}
-
-		proc, err := cntxt.Search()
-		if err != nil {
-			return fmt.Errorf("daemon not running or pidfile missing: %w", err)
-		}
-
-		// 给进程发 SIGTERM
-		if err := proc.Signal(syscall.SIGTERM); err != nil {
-			return err
-		}
-
-		fmt.Println("daemon stopping...")
-
-		return nil
-	},
+	}
 }
 
 var serverCmd = &cobra.Command{
@@ -166,68 +222,45 @@ var serverCmd = &cobra.Command{
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		cntxt := &daemon.Context{
-			PidFileName: "gridbeat.pid",
-			PidFilePerm: 0644,
-			LogFileName: "",
-			LogFilePerm: 0640,
-			WorkDir:     "./",
-			Umask:       027,
-			Args:        nil,
-		}
-
-		if core.Gconfig.Daemon {
-			var child *os.Process
-			var err error
-
-			if child, err = cntxt.Reborn(); err != nil {
-				log.Fatal("Unable to run: ", err)
-			}
-			if child != nil {
-				return nil
-			}
-			defer cntxt.Release()
-		}
-
 		var err error
-		if err = initLoggers(); err != nil {
-			panic(err)
+		var logger *ReopenLogger
+
+		if logger, err = NewReopenLogger(core.Gconfig.LogPath, core.Gconfig.Debug); err != nil {
+			cobra.CheckErr(err)
+		}
+		defer logger.Close()
+
+		fmt.Printf("use log path: %s\n", core.Gconfig.LogPath)
+
+		if err = model.InitDB(core.Gconfig.DataPath, "app.db", logger.sqlLogger); err != nil {
+			logger.runLogger.Fatal(err)
 		}
 
-		if err = model.InitDB(core.Gconfig.DataPath+"/app.db", sqlLogger); err != nil {
-			runLogger.Fatal(err)
+		if err := createPidFile(core.Gconfig.PID); err != nil {
+			cobra.CheckErr(fmt.Errorf("already running? %w", err))
 		}
+		defer removePidFile(core.Gconfig.PID)
 
-		// 创建信号用于等待服务端关闭信号
-		sigs := make(chan os.Signal, 1)
-		done := make(chan bool, 1)
-		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-		go func() {
-			<-sigs
-			done <- true
-		}()
-
-		time.Sleep(10 * time.Second)
+		go handleSignals(logger)
 
 		// mqtt
 		var server *mqtt.Server
-		if server, err = core.ServerMQTT(mqttLogger); err != nil {
-			mqttLogger.Fatal(err)
+		if server, err = core.ServerMQTT(logger.mqttLogger); err != nil {
+			logger.mqttLogger.Fatal(err)
 			return err
 		}
 		if err := server.Serve(); err != nil {
-			mqttLogger.Fatal(err)
+			logger.mqttLogger.Fatal(err)
 			return err
 		}
 
-		go core.ServerHTTP(server, runLogger, accessLogger)
+		go core.ServerHTTP(server, logger.runLogger, logger.accessLogger)
 
-		go core.ServerPlugins(server, runLogger)
+		go core.ServerPlugins(server, logger.runLogger)
 
-		// 服务端等待关闭信号
-		<-done
-
-		// 关闭服务端时需要做的一些清理工作
+		for {
+			time.Sleep(1000 * time.Second)
+		}
 
 		return nil
 	},

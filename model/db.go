@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/glebarez/sqlite"
@@ -81,12 +82,16 @@ func (l *LogrusLogger) Trace(
 	}
 }
 
-func InitDB(path string, errorLogger *logrus.Logger) error {
+func InitDB(path string, filename string, errorLogger *logrus.Logger) error {
 	gormLogger := NewLogrusLogger(errorLogger)
 	gormLogger.LogLevel = logger.LogLevel(logrus.DebugLevel)
 	gormLogger.SlowThreshold = 500 * time.Millisecond
 
-	db, err := gorm.Open(sqlite.Open(path), &gorm.Config{
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		return fmt.Errorf("failed to create dir %s: %w", path, err)
+	}
+
+	db, err := gorm.Open(sqlite.Open(path+"/"+filename), &gorm.Config{
 		Logger: gormLogger,
 	})
 	if err != nil {

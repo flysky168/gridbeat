@@ -5,16 +5,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/fluxionwatt/gridbeat/core"
 	"github.com/fluxionwatt/gridbeat/model"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
 )
-
-func init() {
-	rootCmd.AddCommand(initDataCmd)
-}
 
 var initDataCmd = &cobra.Command{
 	Use:   "init",
@@ -25,7 +22,7 @@ var initDataCmd = &cobra.Command{
 		errorLogger.SetFormatter(&logrus.JSONFormatter{})
 		errorLogger.SetOutput(os.Stdout)
 
-		if err := model.InitDB("./data/app.db", errorLogger); err != nil {
+		if err := model.InitDB(core.Gconfig.DataPath, "app.db", errorLogger); err != nil {
 			errorLogger.Fatal(err)
 		}
 
