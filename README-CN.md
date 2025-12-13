@@ -29,10 +29,8 @@ gridbeat 管理面板的默认登陆账号为 `root`，密码为 `admin`。
 选择 [Relase](https://github.com/fluxionwatt/gridbeat/releases) 版本下载
 
 ```bash
-# 创建运行依赖目录 (config 是配置文件目录，log 是日志文件目录，data 是数据文件目录， extra 是扩展数据目录)
-$ mkdir -p gridbeat/{config,log,data,extra}
-$ tar xvzf gridbeat-linux-amd64.tar.gz -C gridbeat/
-$ cd gridbeat
+$ tar xvzf gridbeat-v1.0.0-linux-amd64.tar.gz
+$ cd gridbeat-v1.0.0-linux-amd64
 $ ./gridbeat server
 ```
 
@@ -50,8 +48,8 @@ tar xvzf go1.25.5.linux-arm64.tar.gz -C /usr/local
 cat > /etc/profile.d/go.sh << 'EOF'
 # Go environment (system-wide)
 export GOROOT=/usr/local/go
-export GOPATH=\$HOME/go
-export PATH="\$PATH:\$GOROOT/bin:\$GOPATH/bin"
+export GOPATH=$HOME/go
+export PATH="$PATH:$GOROOT/bin:$GOPATH/bin"
 export GOPROXY=https://goproxy.cn,direct
 EOF
 
@@ -68,7 +66,6 @@ tar xvzf node-v25.2.1-linux-arm64.tar.gz -C /usr/local/ --strip-components=1
 go install github.com/go-task/task/v3/cmd/task@latest
 
 ### Mac
-brew install go-task/tap/go-task
 brew install go-task
 
 # 下载源代码
