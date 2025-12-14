@@ -37,7 +37,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $PWD/"+version.ProgramName+".yaml)")
 	rootCmd.PersistentFlags().BoolVar(&core.Gconfig.Debug, "debug", false, "debug mode")
-	rootCmd.PersistentFlags().StringVarP(&core.Gconfig.Plugins, "plugins", "", "./plugins", "load specified plugins folder")
+	rootCmd.PersistentFlags().StringVarP(&core.Gconfig.Plugins, "plugins", "", "./plugins", "directory from which loads plugin lib files")
 
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 }

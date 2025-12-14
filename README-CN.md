@@ -60,13 +60,14 @@ source /etc/profile.d/go.sh
 wget https://mirrors.cloud.tencent.com/nodejs-release/v25.2.1/node-v25.2.1-linux-arm64.tar.gz
 tar xvzf node-v25.2.1-linux-arm64.tar.gz -C /usr/local/ --strip-components=1
 
-# 安装构建工具 go-task
+# 安装构建工具 go-task、goreleaser
 
 ### Linux
 go install github.com/go-task/task/v3/cmd/task@latest
+go install github.com/goreleaser/goreleaser/v2@latest
 
 ### Mac
-brew install go-task
+brew install go-task goreleaser
 
 # 下载源代码
 $ git clone https://github.com/fluxionwatt/gridbeat
@@ -76,12 +77,14 @@ $ cd gridbeat && task build
 ```
 
 # rpm build
+
+```bash
 $ goreleaser release --clean --snapshot --skip=publish --skip=announce
+```
 
 ### Docker
 
 ```bash
-# 构建镜像
 dnf -y install podman podman-docker
 systemctl enable --now podman
 dnf install bash-completion -y
