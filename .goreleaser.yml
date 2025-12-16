@@ -96,3 +96,33 @@ nfpms:
           mode: 0755
           owner: root
           group: root
+
+dockers_v2:
+  - id: myapp
+    dockerfile: docker/Dockerfile
+    images:
+      - docker.io/fluxionwatt/gridbeat
+    tags:
+      - "v{{ .Version }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+
+    # 可选：把额外文件放进 docker build 上下文（否则上下文里只有产物，没有源码）
+    # extra_files:
+    #   - config/config.yml
+
+    # 可选：传 build args
+    build_args:
+      VERSION: "{{ .Version }}"
+      COMMIT: "{{ .FullCommit }}"
+      DATE: "{{ .Date }}"
+
+    # 可选：OCI labels
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.created: "{{ .Date }}"
+      org.opencontainers.image.source: "{{ .GitURL }}"
