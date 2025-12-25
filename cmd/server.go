@@ -1,267 +1,246 @@
 package cmd
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/fluxionwatt/gridbeat/core"
-	"github.com/fluxionwatt/gridbeat/model"
+	"github.com/fluxionwatt/gridbeat/internal/auth"
+	"github.com/fluxionwatt/gridbeat/internal/db"
+	"github.com/fluxionwatt/gridbeat/internal/models"
+	"github.com/fluxionwatt/gridbeat/pluginapi"
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	http "github.com/fluxionwatt/gridbeat/core/http"
+	"github.com/fluxionwatt/gridbeat/core/plugin/cmbus"
+	_ "github.com/fluxionwatt/gridbeat/core/plugin/goose"
+	"github.com/fluxionwatt/gridbeat/core/plugin/mbus"
+	_ "github.com/fluxionwatt/gridbeat/core/plugin/stream"
 )
-
-type ReopenLogger struct {
-	mu sync.Mutex
-
-	accesslogPath string
-	runlogPath    string
-	mqttlogPath   string
-	sqllogPath    string
-
-	accesslogPathFile *os.File
-	runlogPathFile    *os.File
-	mqttlogPathFile   *os.File
-	sqllogPathFile    *os.File
-
-	accessLogger *logrus.Logger
-	runLogger    *logrus.Logger
-	mqttLogger   *logrus.Logger
-	sqlLogger    *logrus.Logger
-}
-
-func NewReopenLogger(path string, debug bool) (*ReopenLogger, error) {
-	var err error
-
-	if err = os.MkdirAll(path, 0o755); err != nil {
-		return nil, fmt.Errorf("failed to create dir %s: %w", path, err)
-	}
-
-	l := &ReopenLogger{
-		accesslogPath: path + "/access.log",
-		runlogPath:    path + "/run.log",
-		mqttlogPath:   path + "/mqtt.log",
-		sqllogPath:    path + "/sql.log",
-		accessLogger:  logrus.New(),
-		runLogger:     logrus.New(),
-		mqttLogger:    logrus.New(),
-		sqlLogger:     logrus.New(),
-	}
-
-	if l.accesslogPathFile, err = os.OpenFile(l.accesslogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
-		return nil, err
-	}
-	if l.runlogPathFile, err = os.OpenFile(l.runlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
-		return nil, err
-	}
-	if l.mqttlogPathFile, err = os.OpenFile(l.mqttlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
-		return nil, err
-	}
-	if l.sqllogPathFile, err = os.OpenFile(l.sqllogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
-		return nil, err
-	}
-
-	l.accessLogger.SetOutput(l.accesslogPathFile)
-	l.accessLogger.SetFormatter(&AccessLogJSONFormatter{})
-
-	l.runLogger.SetOutput(l.runlogPathFile)
-	l.runLogger.SetFormatter(&logrus.JSONFormatter{})
-	if debug {
-		l.runLogger.SetLevel(logrus.DebugLevel)
-		l.runLogger.ReportCaller = true
-	}
-
-	l.mqttLogger.SetOutput(l.mqttlogPathFile)
-	l.mqttLogger.SetFormatter(&logrus.JSONFormatter{})
-	if debug {
-		l.mqttLogger.SetLevel(logrus.DebugLevel)
-		l.mqttLogger.ReportCaller = true
-	}
-
-	l.sqlLogger.SetOutput(l.sqllogPathFile)
-	l.sqlLogger.SetFormatter(&logrus.JSONFormatter{})
-	if debug {
-		l.sqlLogger.SetLevel(logrus.DebugLevel)
-		l.sqlLogger.ReportCaller = true
-	}
-
-	return l, nil
-}
-
-func (l *ReopenLogger) Reopen() error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	if l.accesslogPathFile != nil {
-		_ = l.accesslogPathFile.Close()
-	}
-
-	if l.runlogPathFile != nil {
-		_ = l.runlogPathFile.Close()
-	}
-
-	if l.mqttlogPathFile != nil {
-		_ = l.mqttlogPathFile.Close()
-	}
-
-	if l.sqllogPathFile != nil {
-		_ = l.sqllogPathFile.Close()
-	}
-
-	var err error
-	if l.accesslogPathFile, err = os.OpenFile(l.accesslogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
-		return err
-	}
-	if l.runlogPathFile, err = os.OpenFile(l.runlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
-		return err
-	}
-	if l.mqttlogPathFile, err = os.OpenFile(l.mqttlogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
-		return err
-	}
-	if l.sqllogPathFile, err = os.OpenFile(l.sqllogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644); err != nil {
-		return err
-	}
-
-	l.accessLogger.SetOutput(l.accesslogPathFile)
-	l.runLogger.SetOutput(l.runlogPathFile)
-	l.mqttLogger.SetOutput(l.mqttlogPathFile)
-	l.sqlLogger.SetOutput(l.sqllogPathFile)
-
-	return nil
-}
-
-func (l *ReopenLogger) Close() {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	if l.accesslogPathFile != nil {
-		_ = l.accesslogPathFile.Close()
-	}
-
-	if l.runlogPathFile != nil {
-		_ = l.runlogPathFile.Close()
-	}
-
-	if l.mqttlogPathFile != nil {
-		_ = l.mqttlogPathFile.Close()
-	}
-
-	if l.sqllogPathFile != nil {
-		_ = l.sqllogPathFile.Close()
-	}
-}
-
-func createPidFile(path string) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
-	if err != nil {
-		return err
-	}
-	_, err = f.WriteString(strconv.Itoa(os.Getpid()))
-	f.Close()
-	return err
-}
-
-func removePidFile(path string) {
-	_ = os.Remove(path)
-}
 
 func init() {
 	rootCmd.AddCommand(serverCmd)
 
 	flags := serverCmd.Flags()
 	flags.BoolVar(&core.Gconfig.DisableAuth, "disable_auth", false, "disable http api auth")
-}
-
-type AccessLogJSONFormatter struct{}
-
-func (f *AccessLogJSONFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	data := make(map[string]interface{}, len(entry.Data))
-
-	for k, v := range entry.Data {
-		data[k] = v
-	}
-
-	data["time"] = entry.Time.Format("02/Jan/2006:15:04:05 -0700")
-
-	b, err := json.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-	return append(b, '\n'), nil
-}
-
-func handleSignals(logger *ReopenLogger) {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGUSR1, syscall.SIGTERM, syscall.SIGINT)
-
-	for sig := range ch {
-		switch sig {
-		case syscall.SIGUSR1:
-			log.Println("received SIGUSR1, reopening log file")
-			if err := logger.Reopen(); err != nil {
-				log.Printf("reopen log failed: %v\n", err)
-			}
-		case syscall.SIGTERM, syscall.SIGINT:
-			log.Println("exiting")
-			logger.Close()
-			os.Exit(0)
-		}
-	}
+	flags.BoolVar(&core.Gconfig.Simulator, "simulator", false, "enable simulator client")
 }
 
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "run server",
 	Long:  ``,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
+
+		cfg := &core.Gconfig
+
+		// Enable/disable auth globally.
+		// 全局启用/禁用鉴权。
+		auth.NoAuth = core.Gconfig.DisableAuth
 
 		var err error
-		var logger *ReopenLogger
+		var logger *pluginapi.ReopenLogger
 
-		if logger, err = NewReopenLogger(core.Gconfig.LogPath, core.Gconfig.Debug); err != nil {
+		if logger, err = pluginapi.NewReopenLogger(core.Gconfig.LogPath, core.Gconfig.Debug); err != nil {
 			cobra.CheckErr(err)
+			return
 		}
-		defer logger.Close()
 
 		fmt.Printf("use log path: %s\n", core.Gconfig.LogPath)
 
-		if err = model.InitDB(core.Gconfig.DataPath, "app.db", logger.sqlLogger); err != nil {
-			logger.runLogger.Fatal(err)
+		// 从目录加载 .so 插件工厂
+		// Optional: load .so plugin factories from a directory.
+		// 内置插件已经通过 init() 完成工厂注册
+		// Built-in factories are already registered via init() above.
+		loadSoFactories(core.Gconfig.Plugins)
+
+		for _, f := range pluginapi.AllFactories() {
+			logger.RunLogger.Info(fmt.Sprintf("factories registered %s", f.Type()))
 		}
 
-		if err := createPidFile(core.Gconfig.PID); err != nil {
-			cobra.CheckErr(fmt.Errorf("already running? %w", err))
+		gdb, err := db.Open(cfg, logger.SqlLogger)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("db open error %w", err))
 		}
-		defer removePidFile(core.Gconfig.PID)
 
-		go handleSignals(logger)
+		if err := models.Migrate(gdb); err != nil {
+			cobra.CheckErr(fmt.Errorf("db migrate %w", err))
+			return
+		}
+
+		// Build registry
+		reg := models.NewRegistry()
+
+		// 注册模型（可选：给某个模型设置默认 Preload）
+		if err := reg.Register(gdb, models.Channel{} /*, modelutil.WithDefaultPreloads("Profile")*/); err != nil {
+			cobra.CheckErr(fmt.Errorf("register channel %w", err))
+			return
+		}
+
+		/*
+			ctx := context.Background()
+
+			// ✅ 只传 table + pkValue
+			obj, err := reg.FindByTablePK(ctx, db, "users", 1)
+			if err != nil {
+				log.Fatal(err)
+			}
+			u := obj.(*example.User)
+			fmt.Println("User:", u.ID, u.Name, u.Email)
+
+			// ✅ 仍然走 Model(&T{})，可选额外 Preload / Scope（不影响你“只传 table+pkValue”）
+			obj2, err := reg.FindByTablePKWith(ctx, db, "devices", int64(1),
+				modelutil.WithScopes(func(tx *gorm.DB) *gorm.DB {
+					return tx.Where("tag = ?", "meter")
+				}),
+			)
+			if err != nil {
+				log.Fatal(err)
+			}
+			d := obj2.(*example.Device)
+			fmt.Println("Device:", d.ID, d.SN, d.Tag)
+
+			// ✅ 如果你想拿到非指针的 struct 值
+			val, err := reg.FindByTablePKValue(ctx, db, "users", 1)
+			if err != nil {
+				log.Fatal(err)
+			}
+			u2 := val.(example.User)
+			fmt.Println("User value:", u2.ID, u2.Name)
+		*/
+
+		// Ensure root exists ("admin" password by default if created).
+		// 确保 root 存在（首次创建默认密码 admin）。
+		if err := models.EnsureRootUser(gdb); err != nil {
+			cobra.CheckErr(fmt.Errorf("ensure root user %w", err))
+			return
+		}
+
+		if err := db.SyncSerials(gdb, cfg.Serial); err != nil {
+			cobra.CheckErr(fmt.Errorf("sync serials failed %w", err))
+			return
+		}
+
+		// 初始化默认 setting 数据（只补缺，不覆盖）
+		// Seed default settings (insert missing only, do NOT overwrite)
+		if err := db.SeedDefaultSettings(gdb); err != nil {
+			cobra.CheckErr(fmt.Errorf("seed default settings failed %w", err))
+			return
+		}
 
 		// mqtt
 		var server *mqtt.Server
-		if server, err = core.ServerMQTT(logger.mqttLogger); err != nil {
-			logger.mqttLogger.Fatal(err)
-			return err
-		}
-		if err := server.Serve(); err != nil {
-			logger.mqttLogger.Fatal(err)
-			return err
+		if server, err = core.ServerMQTT(logger.MqttLogger); err != nil {
+			logger.MqttLogger.Error(err)
+			cobra.CheckErr(fmt.Errorf("server  d mqtt %w", err))
+			return
 		}
 
-		go core.ServerHTTP(server, logger.runLogger, logger.accessLogger)
+		rootCtx, rootCancel := context.WithCancel(context.Background())
+		//defer rootCancel()
 
-		go core.ServerPlugins(server, logger.runLogger)
+		var wg sync.WaitGroup
 
-		for {
-			time.Sleep(1000 * time.Second)
+		// 捕获信号 / capture OS signals.
+		go func() {
+			ch := make(chan os.Signal, 1)
+			signal.Notify(ch, syscall.SIGUSR1, syscall.SIGTERM, syscall.SIGINT)
+
+			for sig := range ch {
+				switch sig {
+				case syscall.SIGUSR1:
+					log.Println("received SIGUSR1, reopening log file")
+					if err := logger.Reopen(); err != nil {
+						log.Printf("reopen log failed: %v\n", err)
+					}
+				case syscall.SIGTERM, syscall.SIGINT:
+					log.Println("exiting")
+					rootCancel()
+					log.Println("root cannel")
+					wg.Wait()
+					log.Println("wait")
+					core.RemovePidFile(core.Gconfig.PID)
+					logger.Close()
+					os.Exit(0)
+				}
+			}
+		}()
+
+		// 宿主环境 / host environment
+		env := &pluginapi.HostEnv{
+			Logger:    logger,
+			DB:        gdb,
+			MQTT:      server,
+			Conf:      &core.Gconfig,
+			PluginLog: logrus.NewEntry(logger.RunLogger),
+			WG:        &wg,
 		}
 
-		return nil
+		// 带 rootCtx + env 的 InstanceManager
+		mgr := core.NewInstanceManager(rootCtx, env)
+		defer mgr.DestroyAll() // 进程退出时清理所有实例 / cleanup on shutdown
+
+		cycle := &core.Cycle{
+			Logger:       logrus.NewEntry(logger.RunLogger),
+			DB:           gdb,
+			MQTT:         server,
+			Conf:         cfg,
+			Mgr:          mgr,
+			WG:           &wg,
+			AccessLogger: logger.AccessLogger,
+		}
+
+		if err := core.CreatePidFile(core.Gconfig.PID); err != nil {
+			cobra.CheckErr(fmt.Errorf("already running? %w", err))
+		}
+
+		if err := cycle.MQTT.Serve(); err != nil {
+			logger.MqttLogger.Error(err)
+			cobra.CheckErr(fmt.Errorf("server mqtt start %w", err))
+			return
+		}
+
+		handler := http.New(http.Config{
+			HTTPSDisable: core.Gconfig.HTTPS.Disable,
+			HTTPAddress:  ":" + viper.GetString("http.port"),
+			HTTPSAddress: ":" + viper.GetString("https.port"),
+		})
+
+		handler.Init(rootCtx, cycle)
+
+		var items []models.Channel
+		if err := gdb.Order("uuid asc").Find(&items).Error; err != nil {
+			cobra.CheckErr(fmt.Errorf("get all channel %w", err))
+			return
+		}
+		for _, channel := range items {
+
+			if core.Gconfig.Simulator {
+				if _, err = mgr.Create("cmbus", channel.UUID, cmbus.InstanceConfig{
+					Model: channel,
+				}); err != nil {
+					cobra.CheckErr(fmt.Errorf("mgr create instance %w", err))
+				}
+			}
+
+			if _, err = mgr.Create("mbus", channel.UUID, mbus.InstanceConfig{
+				Model:     channel,
+				UnitID:    1,
+				Quantity:  1,
+				StartAddr: 100,
+			}); err != nil {
+				cobra.CheckErr(fmt.Errorf("mgr create instance %w", err))
+			}
+		}
+
+		select {}
 	},
 }

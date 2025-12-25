@@ -10,8 +10,9 @@ export interface LoginPayload {
 }
 
 export interface LoginResponse {
-  token: string
-  user: UserInfo
+  code: number
+  message: string
+  data: UserInfo
 }
 
 /**
@@ -26,15 +27,20 @@ export async function loginApi(payload: LoginPayload): Promise<LoginResponse> {
   if (mockEnabled) {
     // mock 模式：本地假数据
     return Promise.resolve({
-      token: 'mock-token-' + Date.now(),
-      user: {
-        id: '84a35e05-531f-4d96-8d5b-bc8a7a358493',
-        username: payload.username || 'root',
-      },
+      
+    "code": 0,
+    "message": "ok",
+    "data": {
+        "username": "root",
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJncmlkYmVhdCIsInN1YiI6IiUhcyh1aW50PTEpIiwibmJmIjoxNzY2MTkxNDIyLCJpYXQiOjE3NjYxOTE0MjIsImp0aSI6ImVlOWQ1YWUxLTdmYWEtNGQ5OS1iYWFmLWI0Nzk1ZDE0MTQ2MyIsInVzZXJuYW1lIjoicm9vdCIsImlzX3Jvb3QiOnRydWUsInR5cCI6IndlYiJ9.j-S52GeCRQNKC_amcxwb0VVbK0s0pTC2lyBRGE7WQpk",
+        "jti": "ee9d5ae1-7faa-4d99-baaf-b4795d141463",
+        "idle_timeout_seconds": 1800,
+        "type": "web"
+      }
     })
   }
 
-  const { data } = await axios.post<LoginResponse>('/v1/api/auth', payload)
+  const { data } = await axios.post<LoginResponse>('/api/v1/auth/login', payload)
   return data
 }
 

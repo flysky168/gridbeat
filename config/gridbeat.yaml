@@ -1,8 +1,8 @@
-debug: true
+debug: false
 log-path: ./
 data-path: ./
 extra-path: ./
-
+plugins: /usr/lib/gridbeat/plugins
 mqtt:
     port: 1883
     host: localhost
@@ -12,31 +12,22 @@ http:
 https:
     disable: false
     port: 8443
-simulator:
-    max_slave_id: 1024
-    modbus-rtu:
-    -
-        name: /dev/ttys022
-        rate: 19200
-        datarate: 8
-        stopbits: 2
-        parity: 0
-    devices:
-        -
-            name: company1
-            sn: ss
-            device_type: ESS
-            device_plugin: Huawei_ESS2000
-            software_version: xxx
-            model: xxx
-            disable: false
-            url: tcp://127.0.0.1:5001
-        -
-            name: company2
-            sn: ss
-            device_type: ESS
-            device_plugin: Huawei_ESS2000
-            software_version: xxx
-            model: xxx
-            disable: false
-            url: tcp://127.0.0.1:5002
+serial:
+    - 
+      device: /dev/ttys004
+      device2: /dev/ttys007
+auth:
+  jwt:
+    # IMPORTANT: change this in production
+    # 重要：生产环境务必修改
+    secret: "change-me"
+    issuer: "gridbeat"
+  web:
+    # Web session idle timeout in minutes (sliding)
+    # Web 会话空闲超时时间（分钟，滑动更新）
+    idle_minutes: 30
+
+audit:
+  # Audit log retention days (auto-clean, no delete API)
+  # 审计日志保留天数（自动清理，不提供删除 API）
+  retention_days: 120

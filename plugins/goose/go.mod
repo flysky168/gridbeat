@@ -1,1 +1,0 @@
-require github.com/fluxionwatt/gridbeat/pluginapi v0.0.0-20240605120000-abcdef123456

@@ -8,7 +8,7 @@ The MQTT plugin publishes collected data in JSON format to some user-defined top
 
 ### Upload Topic
 
-The upload topic is specified by the **upload-topic** parameter, and the default one set through the dashboard is **/neuron/{MQTT driver name}**.
+The upload topic is specified by the **upload-topic** parameter, and the default one set through the dashboard is **/gridbeat/{MQTT driver name}**.
 
 ### Values Format
 
@@ -211,7 +211,7 @@ The actual output result is as follows:
 
 #### Example Two
 
-Add global static tags through custom data format. These static tags will be carried in all driver group data reporting. For example, if NeuronEX is deployed on a gateway hardware, you can add the gateway's SN number, IP address, and location information to all driver groups.
+Add global static tags through custom data format. These static tags will be carried in all driver group data reporting. For example, if gridbeatEX is deployed on a gateway hardware, you can add the gateway's SN number, IP address, and location information to all driver groups.
 
 ```json
 {
@@ -298,7 +298,7 @@ Each southbound collection group can configure different static tags. This repre
 
 Static tag feature supports **Boolean**, **Integer**, **Float**, and **String** data types. Complex data types, such as arrays and structures, will be reported as **String**.
 
-If the static tags added are shared by all collection groups in the NeuronEX instance, you can select **All Collection Groups** to add static tags, or add static tags in the **Custom** custom format, as shown in [Custom Format: Example Two](#example-two).
+If the static tags added are shared by all collection groups in the gridbeatEX instance, you can select **All Collection Groups** to add static tags, or add static tags in the **Custom** custom format, as shown in [Custom Format: Example Two](#example-two).
 
 ::: tip
 Static tag names must not be the same as the tag names collected by the southbound driver.
@@ -315,7 +315,7 @@ If the names are the same:
 
 ### Request
 
-You can read a group of tags by sending requests in JSON to the MQTT topic **/neuron/{node_name}/read/req**.
+You can read a group of tags by sending requests in JSON to the MQTT topic **/gridbeat/{node_name}/read/req**.
 
 #### Body
 
@@ -336,7 +336,7 @@ Below is an example read request:
 
 ### Response
 
-Read response will be published to the MQTT topic **/neuron/{node_name}/read/resp**.
+Read response will be published to the MQTT topic **/gridbeat/{node_name}/read/resp**.
 
 #### Body
 
@@ -373,7 +373,7 @@ Tag value is returned only when the tag is read successfully. If something goes 
 You could write a tag by sending requests in JSON to the MQTT topic designated by the **Write Request Topic** parameter.
 
 ::: tip
-Before Neuron version 2.4.5, the write request topic was hard-coded to **/neuron/{random_str}/write/req**.
+Before gridbeat version 2.4.5, the write request topic was hard-coded to **/gridbeat/{random_str}/write/req**.
 :::
 
 #### Body
@@ -401,7 +401,7 @@ Below is an example of write request:
 
 #### Write multiple tags
 
-Since Neuron version 2.6.0, write requests also support writing multiple tags at
+Since gridbeat version 2.6.0, write requests also support writing multiple tags at
 a time. To write multiple tags at a time, the request body should have the
 following fields:
 * `uuid` : a unique identifier, which will be echoed back in the response to help identify the corresponding request.
@@ -435,7 +435,7 @@ Below is an example write request:
 Write response will be published to the MQTT topic designated by the **Write Response Topic** parameter.
 
 ::: tip
-Before Neuron version 2.4.5, the write response topic was hard-coded to **/neuron/{random_str}//write/resp**.
+Before gridbeat version 2.4.5, the write response topic was hard-coded to **/gridbeat/{random_str}//write/resp**.
 :::
 
 #### Body
@@ -459,7 +459,7 @@ Reports status of all the southbound nodes to the specified topic.
 
 ### Status Report Topic
 
-The status report topic is specified in the northbound node configuration. Its default value is **/neuron/{random_str}/state/update**.
+The status report topic is specified in the northbound node configuration. Its default value is **/gridbeat/{random_str}/state/update**.
 
 ### Status Report Interval
 

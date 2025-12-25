@@ -1,6 +1,6 @@
 # 配置
 
-Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息、控制网关行为或设置轮询配置。 IIoT 平台必须通过向 Neuron 发送请求消息来启动通信。 通过返回，Neuron 将返回所需的信息或执行相应的操作。 如果有错误，将返回一个错误代码来说明失败的原因。
+gridbeat 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息、控制网关行为或设置轮询配置。 IIoT 平台必须通过向 gridbeat 发送请求消息来启动通信。 gridbeat 将返回所需的信息或执行相应的操作。 如果有错误，将返回一个错误代码来说明失败的原因。
 
 ## 常量定义
 
@@ -496,8 +496,8 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
             "log_level": "notice"
         }
     ],
-    //log level of neuron.log
-    "neuron_core": "notice"
+    //log level of gridbeat.log
+    "gridbeat_core": "notice"
 }
 ```
 
@@ -1278,8 +1278,8 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
             "node_type": 2,
             "name": "MQTT",
             "library": "libplugin-mqtt.so",
-            "description": "Neuron northbound MQTT plugin bases on NanoSDK.",
-            "description_zh": "基于 NanoSDK 的 Neuron 北向应用 MQTT 插件",
+            "description": "gridbeat northbound MQTT plugin bases on NanoSDK.",
+            "description_zh": "基于 NanoSDK 的 gridbeat 北向应用 MQTT 插件",
             "schema": "mqtt"
         }
     ]
@@ -1352,8 +1352,8 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
     "connection_mode": {
         "name": "Connection Mode",
         "name_zh": "连接模式",
-        "description": "Neuron as the client, or as the server",
-        "description_zh": "Neuron 作为客户端或服务端",
+        "description": "gridbeat as the client, or as the server",
+        "description_zh": "gridbeat 作为客户端或服务端",
         "attribute": "required",
         "type": "map",
         "default": 0,
@@ -1452,7 +1452,7 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
     "group": "group-1",
     //when using the MQTT plugin, the topic field needs to be added
     "params": {
-        "topic": "/neuron/mqtt/group-1"
+        "topic": "/gridbeat/mqtt/group-1"
     },
     //optional, static tags
     "static_tags": {
@@ -1500,7 +1500,7 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
       //optional, depends on plugins
       "params": {
         //when using the MQTT plugin, the topic key is the upload topoic
-        "topic": "/neuron/mqtt/modbus1/group1"
+        "topic": "/gridbeat/mqtt/modbus1/group1"
       },
       //optional, static tags
       "static_tags": {
@@ -1511,7 +1511,7 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
       "driver": "modbus2",
       "group": "group2",
       "params": {
-        "topic": "/neuron/mqtt/modbus2/group2"
+        "topic": "/gridbeat/mqtt/modbus2/group2"
       }
     }
   ]
@@ -1554,7 +1554,7 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
     "group": "group-1",
     "params": {
         //when using the MQTT plugin, the topic key is the upload topic
-        "topic": "/neuron/mqtt/group-1"
+        "topic": "/gridbeat/mqtt/group-1"
     },
     //optional, static tags
     "static_tags": {
@@ -1599,7 +1599,7 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
     "group": "group-1",
     //optional, when using the MQTT plugin, the topic field needs to be added
     "params": {
-        "topic": "/neuron/mqtt/group-1"
+        "topic": "/gridbeat/mqtt/group-1"
     }
 }
 ```
@@ -1645,7 +1645,7 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
             "group": "group-1",
             //optional, when using the MQTT plugin, the topic field needs to be added
             "params": {
-                "topic": "/neuron/mqtt/group-1"
+                "topic": "/gridbeat/mqtt/group-1"
             }
             //optional, static tags
             "static_tags": {
@@ -1659,7 +1659,7 @@ Neuron 将为 IIoT 平台提供一系列 API 服务，用于查询基本信息�
             "group": "group-2",
             //when using the MQTT plugin, the topic field needs to be added
             "params": {
-                "topic": "/neuron/mqtt/group-2"
+                "topic": "/gridbeat/mqtt/group-2"
             }
         }
     ]

@@ -4,9 +4,17 @@
 
 English | [简体中文](./README-CN.md)
 
-GridBeat is an open-source software for data acquisition and monitoring of solar photovoltaic systems, energy storage systems, and charging piles. As a data aggregation center, it collects, converts protocols, stores, and manages sensor data reported from numerous inverters, ESS devices, charging piles, and other equipment. It enables efficient monitoring and maintenance through a web interface (including an API). The GridBeat Box reference design, based on Nexus, can connect up to 1024 devices, supports multiple communication protocols (Modbus-TCP/RTU, 4G/3G/WAN/LAN), is easy to install, and can operate stably in various environments.
+GridBeat is an open-source SCADA (Supervisory Control and Data Acquisition) software designed for energy sectors such as photovoltaics (PV) and energy storage. Serving as a data aggregation hub, it collects, converts, stores, and manages sensor data reported from various devices—including PV inverters, Power Conversion Systems (PCS), Energy Storage Systems (ESS), environmental monitors, smart meters, box-type transformers, and EV charging piles. It enables efficient monitoring and maintenance through a web interface and integrated APIs.
 
-Key Functions
+### Key Functions
+
+- Data Aggregation: Collects real-time data from sensors in inverters, energy storage units, and other components.
+- Multi-Protocol Inbound Support: Supports industrial protocols including Modbus-TCP and Modbus-RTU.
+- Northbound Protocol Support: Supports protocols such as IEC104, MQTT, Modbus, and GOOSE for seamless integration with third-party management systems.
+- Edge-Native Performance: Features real-time capabilities that leverage low-latency edge computing networks.
+- Modular Design: Utilizes a loosely coupled, modular architecture, allowing for functional expansion via pluggable modules.
+- HTTP API: Provides HTTP API interfaces for streamlined system integration.
+
 
 ## Quick Start
 

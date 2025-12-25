@@ -202,8 +202,8 @@ const onSubmit = async () => {
     }
 
     await auth.login({
-      token: res.token,
-      user: res.user,
+      token: res.data.token,
+      user: res.data,
     })
 
     ElMessage.success(t('login.success'))

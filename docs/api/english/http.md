@@ -1,6 +1,6 @@
 # Configuration
 
-Neuron provide a series of API services for IIoT platform, to query the basic information, to control gateway behaviors or to setup the polling configuration. IIoT platform can initiate the communication by sending request message to Neuron. By return, Neuron would send back the required information or execute the deserved action. If there is error, a error code would be returned to tell the reason of failure.
+gridbeat provide a series of API services for IIoT platform, to query the basic information, to control gateway behaviors or to setup the polling configuration. IIoT platform can initiate the communication by sending request message to gridbeat. By return, gridbeat would send back the required information or execute the deserved action. If there is error, a error code would be returned to tell the reason of failure.
 
 ## Constant
 
@@ -488,8 +488,8 @@ Please refer to [Plugin Setting](./plugin-setting.md) for the configuration para
             "log_level": "notice"
         }
     ],
-    //log level of neuron.log
-    "neuron_core": "notice"
+    //log level of gridbeat.log
+    "gridbeat_core": "notice"
 }
 ```
 
@@ -1259,8 +1259,8 @@ To update both group name and interval:
             "node_type": 2,
             "name": "MQTT",
             "library": "libplugin-mqtt.so",
-            "description": "Neuron northbound MQTT plugin bases on NanoSDK.",
-            "description_zh": "基于 NanoSDK 的 Neuron 北向应用 MQTT 插件",
+            "description": "gridbeat northbound MQTT plugin bases on NanoSDK.",
+            "description_zh": "基于 NanoSDK 的 gridbeat 北向应用 MQTT 插件",
             "schema": "mqtt"
         }
     ]
@@ -1333,8 +1333,8 @@ To update both group name and interval:
     "connection_mode": {
         "name": "Connection Mode",
         "name_zh": "连接模式",
-        "description": "Neuron as the client, or as the server",
-        "description_zh": "Neuron 作为客户端或服务端",
+        "description": "gridbeat as the client, or as the server",
+        "description_zh": "gridbeat 作为客户端或服务端",
         "attribute": "required",
         "type": "map",
         "default": 0,
@@ -1433,7 +1433,7 @@ To update both group name and interval:
     "group": "group-1",
     //optional, when using the MQTT plugin, the topic field needs to be added
     "params": {
-        "topic": "/neuron/mqtt/group-1"
+        "topic": "/gridbeat/mqtt/group-1"
     },
     //optional, static tags
     "static_tags": {
@@ -1481,7 +1481,7 @@ To update both group name and interval:
       //optional, depends on plugins
       "params": {
         //when using the MQTT plugin, the topic key is the upload topoic
-        "topic": "/neuron/mqtt/modbus1/group1"
+        "topic": "/gridbeat/mqtt/modbus1/group1"
       },
       //optional, static tags
       "static_tags": {
@@ -1492,7 +1492,7 @@ To update both group name and interval:
       "driver": "modbus2",
       "group": "group2",
       "params": {
-        "topic": "/neuron/mqtt/modbus2/group2"
+        "topic": "/gridbeat/mqtt/modbus2/group2"
       }
     }
   ]
@@ -1535,7 +1535,7 @@ To update both group name and interval:
     "group": "group-1",
     "params": {
         //when using the MQTT plugin, the topic key is the upload topic
-        "topic": "/neuron/mqtt/group-1"
+        "topic": "/gridbeat/mqtt/group-1"
     },
     //optional, static tags
     "static_tags": {
@@ -1580,7 +1580,7 @@ To update both group name and interval:
     "group": "group-1",
     //optional, when using the MQTT plugin, the topic field needs to be added
     "params": {
-        "topic": "/neuron/mqtt/group-1"
+        "topic": "/gridbeat/mqtt/group-1"
     }
 }
 ```
@@ -1626,7 +1626,7 @@ To update both group name and interval:
             "group": "group-1",
             //when using the MQTT plugin, the topic field needs to be added
             "params": {
-                "topic": "/neuron/mqtt/group-1"
+                "topic": "/gridbeat/mqtt/group-1"
             },
             //optional, static tags
             "static_tags": {
@@ -1640,7 +1640,7 @@ To update both group name and interval:
             "group": "group-2",
             //when using the MQTT plugin, the topic field needs to be added
             "params": {
-                "topic": "/neuron/mqtt/group-2"
+                "topic": "/gridbeat/mqtt/group-2"
             }
         }
     ]
@@ -1908,7 +1908,7 @@ Response to the file name, size, creation time and update time, when responding 
 {
     "files": [
         {
-            "name": "neuron",
+            "name": "gridbeat",
             "size": 4096,
             "ctime": "Wed Jan  4 02:38:12 2023",
             "mtime": "Mon Dec 26 09:48:42 2022"

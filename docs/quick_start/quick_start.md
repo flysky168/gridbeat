@@ -32,7 +32,7 @@ After downloading and installing, run the Modbus Slave Simulator. The default po
 ### Configure the Device
 After creating the device, go to the device details page to configure the device parameters.
 
-**IP Address**: Fill in the IP address of the machine running the Modbus TCP simulator. If Neuron and the simulator are running on the same machine, you can enter `127.0.0.1`.
+**IP Address**: Fill in the IP address of the machine running the Modbus TCP simulator. If Gridbeat and the simulator are running on the same machine, you can enter `127.0.0.1`.
 **Port**: The default is 502. Modify it according to the listening port of the simulator.
 
 Other parameters can be left as default.
@@ -73,14 +73,14 @@ On the **Northbound Application Management** page, click the northbound applicat
 
 ![subscribe](./assets/subscription-add.png)
 
-Remember the topic used for the subscription, as you will need to subscribe to this topic later to see the data. The default topic format is `/neuron/{application_name}`.
+Remember the topic used for the subscription, as you will need to subscribe to this topic later to see the data. The default topic format is `/gridbeat/{application_name}`.
 
-At this point, the configuration for Neuron to collect data via Modbus TCP and send it via MQTT is complete.
+At this point, the configuration for Gridbeat to collect data via Modbus TCP and send it via MQTT is complete.
 
 ## Use MQTTX to Subscribe to the Topic and View Data
 
 After subscribing, open [MQTTX](https://mqttx.app/zh), create a new connection, and connect to `broker.emqx.io:1883` (modify according to the MQTT broker configured in the northbound application).
 
-After a successful connection, subscribe to the topic `/neuron/mqtt` (modify according to the topic used in the northbound subscription), and you will see the tag data.
+After a successful connection, subscribe to the topic `/gridbeat/mqtt` (modify according to the topic used in the northbound subscription), and you will see the tag data.
 
 ![mqttx](./assets/mqttx.png)

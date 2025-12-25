@@ -1,20 +1,16 @@
-FROM alpine:3.22
-RUN apk --update upgrade && \
-    apk add sqlite && \
-    rm -rf /var/cache/apk/*
-# ENV GOPROXY https://goproxy.cn/
-
-#RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
-
-ADD gridbeat /gridbeat
+FROM busybox:stable
+ARG TARGETARCH
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD curl --fail http://localhost:8080/health || exit 1
 
-RUN mkdir -p /config /log /data /extra
+RUN mkdir -p /var/log/gridbeat /var/lib/gridbeat/data /var/lib/gridbeat/extra /var/lib/gridbeat/plugins
 
-VOLUME /config /log /data /extra
+COPY linux/${TARGETARCH}/gridbeat /gridbeat
+#COPY plugins/*.so /usr/lib/gridbeat/plugins/
 
-EXPOSE 8080 8443
+VOLUME /var/log/gridbeat /var/lib/gridbeat/data /var/lib/gridbeat/extra
+
+EXPOSE 8080
 
 RUN  chmod +x /gridbeat
-CMD ["/gridbeat","server","--config", "/config/gridbeat.yaml"]
+CMD ["/gridbeat","server"]

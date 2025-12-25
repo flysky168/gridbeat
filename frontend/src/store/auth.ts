@@ -4,9 +4,11 @@ import { ElMessage } from 'element-plus'
 import { DEFAULT_SESSION_TIMEOUT_MINUTES } from '@/config/auth'
 
 export interface UserInfo {
-  id: string
   username: string
-  // 后面你要加邮箱等字段可以在这里扩展
+  token: string
+  jti: string
+  idle_timeout_seconds: number
+  type: string
 }
 
 interface AuthState {

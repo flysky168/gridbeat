@@ -2,10 +2,6 @@ version: 2
 
 project_name: gridbeat
 
-env:
-  - GO111MODULE=on
-  - CGO_ENABLED=0
-
 builds:
   - env:
       - CGO_ENABLED=0
@@ -13,24 +9,12 @@ builds:
       - -s -w -X github.com/fluxionwatt/gridbeat/version.Version={{ .Version }} -X github.com/fluxionwatt/gridbeat/version.CommitSHA={{ .ShortCommit }}
     main: main.go
     binary: gridbeat
-    goos:
-      - darwin
-      - linux
-    goarch:
-      - amd64
-      - arm64
-    goarm:
-      - "6"
-      - "7"
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
     ignore:
       - goos: darwin
-        goarch: "amd64"
-      - goos: darwin
-        goarch: "386"
-      - goos: windows
-        goarch: "386"
-      - goos: windows
-        goarch: "arm64"
+        goarch: amd64
+
 archives:
   - name_template: "{{ .ProjectName }}-{{ .Version }}-{{.Os}}-{{.Arch}}{{if .Arm}}v{{.Arm}}{{end}}"
     formats: ["tar.gz"]
@@ -40,6 +24,7 @@ archives:
     files:
       - none*
       - config/*.yaml
+      - plugins/*.so
     wrap_in_directory: true
 
 nfpms:
@@ -61,6 +46,10 @@ nfpms:
       postinstall: packaging/postinstall.sh
       preremove: packaging/preremove.sh
     contents:
+      - dst: /usr/lib/gridbeat/plugins
+        type: dir
+        file_info:
+          mode: 0755
       - src: "./packaging/cron.daily"
         dst: "/etc/cron.daily/gridbeat"
       - src: "./packaging/systemd"
@@ -101,7 +90,7 @@ dockers_v2:
   - id: myapp
     dockerfile: docker/Dockerfile
     images:
-      - docker.io/fluxionwatt/gridbeat
+      - fluxionwatt/gridbeat
     tags:
       - "v{{ .Version }}"
       - "{{ if not .Prerelease }}latest{{ end }}"
@@ -109,20 +98,3 @@ dockers_v2:
       - linux/amd64
       - linux/arm64
 
-    # 可选：把额外文件放进 docker build 上下文（否则上下文里只有产物，没有源码）
-    # extra_files:
-    #   - config/config.yml
-
-    # 可选：传 build args
-    build_args:
-      VERSION: "{{ .Version }}"
-      COMMIT: "{{ .FullCommit }}"
-      DATE: "{{ .Date }}"
-
-    # 可选：OCI labels
-    labels:
-      org.opencontainers.image.title: "{{ .ProjectName }}"
-      org.opencontainers.image.version: "{{ .Version }}"
-      org.opencontainers.image.revision: "{{ .FullCommit }}"
-      org.opencontainers.image.created: "{{ .Date }}"
-      org.opencontainers.image.source: "{{ .GitURL }}"

@@ -32,7 +32,7 @@ $ ./gridbeat simulator
 ### 配置设备
 创建设备后，进入设备详情页面配置设备参数。
 
-**IP 地址**: 填写 Modbus TCP 模拟器运行机器的 IP 地址。如果 Neuron 与模拟器运行在同一台机器上，可以填写 `127.0.0.1`。
+**IP 地址**: 填写 Modbus TCP 模拟器运行机器的 IP 地址。如果 Gridbeat 与模拟器运行在同一台机器上，可以填写 `127.0.0.1`。
 **端口**: 默认502，根据模拟器的监听端口进行修改。
 
 其他参数默认即可。
@@ -73,14 +73,14 @@ $ ./gridbeat simulator
 
 ![subscribe](./assets/subscription-add.png)
 
-记住订阅时的 topic，后续订阅该 topic 即可看到数据。topic 默认格式为`/neuron/{应用名称}`
+记住订阅时的 topic，后续订阅该 topic 即可看到数据。topic 默认格式为`/gridbeat/{应用名称}`
 
-至此，Neuron 的 Modbus TCP 采集数据并通过 MQTT 发送数据的配置完成。
+至此， Modbus TCP 采集数据并通过 MQTT 发送数据的配置完成。
 
 ## 使用 MQTTX 订阅 topic 查看数据
 
 订阅完成后，打开 [MQTTX](https://mqttx.app/zh)，创建一个新的连接，连接到 `broker.emqx.io:1883`(根据北向应用配置的 MQTT broker 修改)。
 
-连接成功后，订阅 topic `/neuron/mqtt` (根据北向订阅时的 topic 修改)，即可看到点位数据。
+连接成功后，订阅 topic `/gridbeat/mqtt` (根据北向订阅时的 topic 修改)，即可看到点位数据。
 
 ![mqttx](./assets/mqttx.png)

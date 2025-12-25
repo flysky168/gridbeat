@@ -20,9 +20,18 @@ tasks:
   build:backend:
     desc: Build backend binary
     env:
-      CGO_ENABLED: '0'
+      CGO_ENABLED: '1'
       GO111MODULE: 'on'
     cmds:
+      - |
+        set -e
+        for d in ./plugins/*; do
+          if [ -d "$d" ]; then
+            name=$(basename "$d")
+            echo "==> building plugin $name"
+            go build -buildmode=plugin -o "plugins/${name}.so" "./plugins/${name}"
+          fi
+        done
       - go build -ldflags='-s -w -X "github.com/fluxionwatt/gridbeat/version.Version={{.VERSION}}" -X "github.com/fluxionwatt/gridbeat/version.BUILDTIME={{.BUILD_TIME}}" -X "github.com/fluxionwatt/gridbeat/version.CommitSHA={{.GIT_COMMIT}}"' -o gridbeat .
     vars:
       BUILD_TIME:

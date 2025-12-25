@@ -43,8 +43,11 @@ export async function getUserInfoApi(): Promise<SystemUserInfoResponse> {
   if (mockEnabled) {
     // mock：给一个 admin 用户 + 默认超时
     return Promise.resolve({
-      id: '1',
-      username: 'admin',
+      username: 'root',
+      token: '',
+      jti: '',
+      idle_timeout_seconds: 2000,
+      type: 'web',
       roles: ['admin'],
       sessionTimeoutMinutes: DEFAULT_SESSION_TIMEOUT_MINUTES,
     })
