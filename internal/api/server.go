@@ -88,6 +88,11 @@ func (s *Server) Route(app *fiber.App) *fiber.App {
 	channels := v1.Group("/channels", auth.AuthMiddleware(s.DB, s.Cfg.Auth.JWT.Secret))
 	channels.Get("/", s.ListOnlineChanel)
 
+	point := v1.Group("/point", auth.AuthMiddleware(s.DB, s.Cfg.Auth.JWT.Secret))
+	// 创建 / Create
+	// POST /api/v1/point
+	point.Post("/", s.CreatePoint)
+
 	// settings
 	settings := v1.Group("/settings", auth.AuthMiddleware(s.DB, s.Cfg.Auth.JWT.Secret))
 

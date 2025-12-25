@@ -15,25 +15,43 @@ type Kind uint8
 const (
 	KindInvalid Kind = iota
 	KindBool
-	KindInt64
+	KindUint16
+	KindSint16
+	KindUint32
+	KindSint32
+	KindSint64
 	KindUint64
+	KindFloat32
 	KindFloat64
 	KindString
 	KindBytes
+	KindBitMask
 )
 
 func (k Kind) String() string {
 	switch k {
 	case KindBool:
 		return "bool"
-	case KindInt64:
-		return "int64"
+	case KindSint16:
+		return "sint16"
+	case KindUint16:
+		return "uint16"
+	case KindSint32:
+		return "sint64"
+	case KindUint32:
+		return "uint64"
+	case KindSint64:
+		return "sint64"
 	case KindUint64:
 		return "uint64"
+	case KindFloat32:
+		return "float32"
 	case KindFloat64:
 		return "float64"
 	case KindString:
 		return "string"
+	case KindBitMask:
+		return "bitmask"
 	case KindBytes:
 		return "bytes"
 	default:
@@ -45,16 +63,28 @@ func ParseKind(s string) (Kind, error) {
 	switch s {
 	case "bool":
 		return KindBool, nil
-	case "int64":
-		return KindInt64, nil
+	case "sint16":
+		return KindSint64, nil
+	case "uint16":
+		return KindUint64, nil
+	case "sint32":
+		return KindSint64, nil
+	case "uint32":
+		return KindUint64, nil
+	case "sint64":
+		return KindSint64, nil
 	case "uint64":
 		return KindUint64, nil
+	case "float32":
+		return KindFloat32, nil
 	case "float64":
 		return KindFloat64, nil
 	case "string":
 		return KindString, nil
 	case "bytes":
 		return KindBytes, nil
+	case "bitmask":
+		return KindBitMask, nil
 	default:
 		return KindInvalid, fmt.Errorf("unknown kind: %q", s)
 	}
@@ -84,8 +114,32 @@ func (s *Scalar) SetBool(v bool) {
 	}
 }
 
-func (s *Scalar) SetInt64(v int64) {
-	s.Kind = KindInt64
+func (s *Scalar) SetSint16(v int16) {
+	s.Kind = KindSint16
+	s.Raw = make([]byte, 2)
+	binary.LittleEndian.PutUint16(s.Raw, uint16(v))
+}
+
+func (s *Scalar) SetUint16(v uint16) {
+	s.Kind = KindUint16
+	s.Raw = make([]byte, 2)
+	binary.LittleEndian.PutUint16(s.Raw, v)
+}
+
+func (s *Scalar) SetSint32(v int32) {
+	s.Kind = KindSint32
+	s.Raw = make([]byte, 4)
+	binary.LittleEndian.PutUint32(s.Raw, uint32(v))
+}
+
+func (s *Scalar) SetUint32(v uint32) {
+	s.Kind = KindUint32
+	s.Raw = make([]byte, 4)
+	binary.LittleEndian.PutUint32(s.Raw, v)
+}
+
+func (s *Scalar) SetSint64(v int64) {
+	s.Kind = KindSint64
 	s.Raw = make([]byte, 8)
 	binary.LittleEndian.PutUint64(s.Raw, uint64(v))
 }
@@ -94,6 +148,12 @@ func (s *Scalar) SetUint64(v uint64) {
 	s.Kind = KindUint64
 	s.Raw = make([]byte, 8)
 	binary.LittleEndian.PutUint64(s.Raw, v)
+}
+
+func (s *Scalar) SetFloat32(v float32) {
+	s.Kind = KindFloat32
+	s.Raw = make([]byte, 4)
+	binary.LittleEndian.PutUint32(s.Raw, math.Float32bits(v))
 }
 
 func (s *Scalar) SetFloat64(v float64) {
@@ -124,8 +184,48 @@ func (s Scalar) Bool() (bool, error) {
 	return s.Raw[0] != 0, nil
 }
 
-func (s Scalar) Int64() (int64, error) {
-	if s.Kind != KindInt64 {
+func (s Scalar) Sint16() (int16, error) {
+	if s.Kind != KindSint16 {
+		return 0, fmt.Errorf("kind mismatch: want int16, got %s", s.Kind)
+	}
+	if len(s.Raw) != 2 {
+		return 0, fmt.Errorf("invalid int16 raw length: %d", len(s.Raw))
+	}
+	return int16(binary.LittleEndian.Uint16(s.Raw)), nil
+}
+
+func (s Scalar) Uint16() (uint16, error) {
+	if s.Kind != KindUint16 {
+		return 0, fmt.Errorf("kind mismatch: want uint16, got %s", s.Kind)
+	}
+	if len(s.Raw) != 2 {
+		return 0, fmt.Errorf("invalid uint16 raw length: %d", len(s.Raw))
+	}
+	return binary.LittleEndian.Uint16(s.Raw), nil
+}
+
+func (s Scalar) Sint32() (int32, error) {
+	if s.Kind != KindSint64 {
+		return 0, fmt.Errorf("kind mismatch: want int32, got %s", s.Kind)
+	}
+	if len(s.Raw) != 4 {
+		return 0, fmt.Errorf("invalid int32 raw length: %d", len(s.Raw))
+	}
+	return int32(binary.LittleEndian.Uint32(s.Raw)), nil
+}
+
+func (s Scalar) Uint32() (uint32, error) {
+	if s.Kind != KindUint32 {
+		return 0, fmt.Errorf("kind mismatch: want uint32, got %s", s.Kind)
+	}
+	if len(s.Raw) != 4 {
+		return 0, fmt.Errorf("invalid uint32 raw length: %d", len(s.Raw))
+	}
+	return binary.LittleEndian.Uint32(s.Raw), nil
+}
+
+func (s Scalar) Sint64() (int64, error) {
+	if s.Kind != KindSint64 {
 		return 0, fmt.Errorf("kind mismatch: want int64, got %s", s.Kind)
 	}
 	if len(s.Raw) != 8 {
@@ -142,6 +242,16 @@ func (s Scalar) Uint64() (uint64, error) {
 		return 0, fmt.Errorf("invalid uint64 raw length: %d", len(s.Raw))
 	}
 	return binary.LittleEndian.Uint64(s.Raw), nil
+}
+
+func (s Scalar) Float32() (float32, error) {
+	if s.Kind != KindFloat64 {
+		return 0, fmt.Errorf("kind mismatch: want float64, got %s", s.Kind)
+	}
+	if len(s.Raw) != 8 {
+		return 0, fmt.Errorf("invalid float64 raw length: %d", len(s.Raw))
+	}
+	return math.Float32frombits(binary.LittleEndian.Uint32(s.Raw)), nil
 }
 
 func (s Scalar) Float64() (float64, error) {
@@ -212,8 +322,8 @@ func (s Scalar) MarshalJSON() ([]byte, error) {
 			return nil, err
 		}
 		return json.Marshal(map[string]any{"kind": "bool", "value": v})
-	case KindInt64:
-		v, err := s.Int64()
+	case KindSint64:
+		v, err := s.Sint64()
 		if err != nil {
 			return nil, err
 		}
@@ -224,6 +334,12 @@ func (s Scalar) MarshalJSON() ([]byte, error) {
 			return nil, err
 		}
 		return json.Marshal(map[string]any{"kind": "uint64", "value": v})
+	case KindFloat32:
+		v, err := s.Float32()
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(map[string]any{"kind": "float32", "value": v})
 	case KindFloat64:
 		v, err := s.Float64()
 		if err != nil {
@@ -262,18 +378,48 @@ func (s *Scalar) UnmarshalJSON(b []byte) error {
 			return err
 		}
 		s.SetBool(v)
-	case KindInt64:
+	case KindSint16:
+		var v int16
+		if err := json.Unmarshal(js.Value, &v); err != nil {
+			return err
+		}
+		s.SetSint16(v)
+	case KindUint16:
+		var v uint16
+		if err := json.Unmarshal(js.Value, &v); err != nil {
+			return err
+		}
+		s.SetUint16(v)
+	case KindSint32:
+		var v int32
+		if err := json.Unmarshal(js.Value, &v); err != nil {
+			return err
+		}
+		s.SetSint32(v)
+	case KindUint32:
+		var v uint32
+		if err := json.Unmarshal(js.Value, &v); err != nil {
+			return err
+		}
+		s.SetUint32(v)
+	case KindSint64:
 		var v int64
 		if err := json.Unmarshal(js.Value, &v); err != nil {
 			return err
 		}
-		s.SetInt64(v)
+		s.SetSint64(v)
 	case KindUint64:
 		var v uint64
 		if err := json.Unmarshal(js.Value, &v); err != nil {
 			return err
 		}
 		s.SetUint64(v)
+	case KindFloat32:
+		var v float32
+		if err := json.Unmarshal(js.Value, &v); err != nil {
+			return err
+		}
+		s.SetFloat32(v)
 	case KindFloat64:
 		var v float64
 		if err := json.Unmarshal(js.Value, &v); err != nil {

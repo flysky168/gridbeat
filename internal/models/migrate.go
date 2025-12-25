@@ -17,7 +17,7 @@ func Migrate(db *gorm.DB) error {
 		return err
 	}
 
-	if err := db.AutoMigrate(&DeviceType{}, &DeviceTypePoint{}, &Device{}); err != nil {
+	if err := db.AutoMigrate(&DeviceTypePoint{}, &Device{}); err != nil {
 		return err
 	}
 
