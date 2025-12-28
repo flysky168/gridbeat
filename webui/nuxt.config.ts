@@ -21,7 +21,9 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     '@nuxt/ui',
     'nuxt-echarts',
-    'nuxt-auth-utils',
+    '@nuxt/image',
+    '@nuxt/icon',
+    '@sidebase/nuxt-auth',
   ],
   runtimeConfig: {
     public: {
