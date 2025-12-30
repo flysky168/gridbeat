@@ -1,0 +1,12 @@
+{
+  "login": {
+    "title": "Sign in",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Login"
+  },
+  "app": {
+    "loading": "Loading...",
+    "title": "Industrial Gateway Management Platform"
+  }
+}

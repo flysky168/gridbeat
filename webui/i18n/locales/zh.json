@@ -1,0 +1,12 @@
+{
+  "login": {
+    "title": "登录",
+    "username": "用户名",
+    "password": "密码",
+    "submit": "登录"
+  },
+  "app": {
+    "loading": "加载中...",
+    "title": "工业网关管理平台"
+  }
+}

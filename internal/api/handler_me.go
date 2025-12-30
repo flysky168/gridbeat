@@ -142,6 +142,41 @@ func (s *Server) CreateMyAPIToken(c fiber.Ctx) error {
 	return response.OK(c, CreateAPITokenResponse{Token: jwtStr, JTI: jti, Type: "api", Name: req.Name})
 }
 
+// ShowMe Show current User info.
+// ShowMe 显示当前用户信息。
+//
+// @Summary List my tokens / 列出我的 Token
+// @Description List tokens (web sessions + api tokens) of current user.
+// @Description 列出当前用户的 Token（Web 会话 + API Token）。
+// @Tags me
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Envelope[[]TokenInfo]
+// @Router /api/v1/me [get]
+func (s *Server) ShowMe(c fiber.Ctx) error {
+	u := MustUser(c)
+
+	//{ user: { id: 1, name: 'Mock Admin', roles: ['admin'] } }
+	type Response struct {
+		User struct {
+			ID    uint     `json:"id"`
+			Name  string   `json:"name"`
+			Roles []string `json:"roles"`
+		} `json:"user"`
+	}
+
+	var r Response
+	r.User.ID = u.ID
+	r.User.Name = u.Username
+	if u.IsRoot {
+		r.User.Roles = []string{"admin"}
+	} else {
+		r.User.Roles = []string{"user"}
+	}
+
+	return response.OK(c, r)
+}
+
 // ListMyTokens lists tokens of current user.
 // ListMyTokens 列出当前用户的 token。
 //

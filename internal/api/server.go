@@ -56,6 +56,9 @@ func (s *Server) Route(app *fiber.App) *fiber.App {
 
 	// Self-service / 自助 API
 	me := protected.Group("/me")
+
+	me.Get("/", s.ShowMe)
+
 	me.Put("/password", s.ChangeMyPassword)
 	me.Post("/tokens", s.CreateMyAPIToken)
 	me.Get("/tokens", s.ListMyTokens)

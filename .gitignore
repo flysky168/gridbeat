@@ -17,6 +17,11 @@ node_modules
 .env.local
 .env.*.local
 
+webui/.nuxt/
+webui/.output/
+webui/dist/
+webui/node_modules/
+
 # Log files
 npm-debug.log*
 yarn-debug.log*

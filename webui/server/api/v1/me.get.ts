@@ -1,18 +1,13 @@
-import { getAuthSession } from 'nuxt-auth-utils'
+export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig(event)
 
-export default defineEventHandler((event) => {
-  const { authMock } = useRuntimeConfig().public
-
-  if (authMock) {
-    return {
-      user: {
-        id: 1,
-        name: 'Mock User',
-        role: 'admin',
-      },
-    }
+  if (config.public.apiMode === 'mock') {
+    return { user: { id: 1, name: 'Mock Admin', roles: ['admin'] } }
   }
 
-  const session = getAuthSession(event)
-  return session ?? null
+  const auth = getRequestHeader(event, 'authorization')
+  return await $fetch('/api/v1/me', {
+    baseURL: config.upstream,
+    headers: auth ? { authorization: auth } : undefined,
+  })
 })
